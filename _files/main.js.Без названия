@@ -1,0 +1,187 @@
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+var swiper = new Swiper(".opinionsSwiper", {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    navigation: {
+        nextEl: '.swiper-next',
+        prevEl: '.swiper-prev',
+        disabledClass: 'disabled',
+    },
+    breakpoints: {
+        0: {
+            slidesPerView: 1
+        },
+        576: {
+            slidesPerView: 2
+        },
+        992: {
+            slidesPerView: 4
+        }
+    },
+});
+
+var swiper2 = new Swiper(".infographicsSwiper", {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    navigation: {
+        nextEl: '.swiper2-next',
+        prevEl: '.swiper2-prev',
+        disabledClass: 'disabled',
+    },
+    breakpoints: {
+        0: {
+            slidesPerView: 1
+        },
+        576: {
+            slidesPerView: 2
+        },
+        992: {
+            slidesPerView: 4
+        }
+    },
+});
+
+var swiper3 = new Swiper(".videoSwiper", {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    navigation: {
+        nextEl: '.swiper3-next',
+        prevEl: '.swiper3-prev',
+        disabledClass: 'disabled',
+    },
+    breakpoints: {
+        0: {
+            slidesPerView: 1
+        },
+        576: {
+            slidesPerView: 2
+        },
+        992: {
+            slidesPerView: 4
+        },
+        1200: {
+            slidesPerView: 5
+        }
+    },
+});
+
+var swiper4 = new Swiper(".seminarsSwiper", {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    navigation: {
+        nextEl: '.swiper4-next',
+        prevEl: '.swiper4-prev',
+        disabledClass: 'disabled',
+    },
+    breakpoints: {
+        0: {
+            slidesPerView: 1
+        },
+        576: {
+            slidesPerView: 2
+        },
+        992: {
+            slidesPerView: 3
+        }
+    },
+});
+
+var swiper5 = new Swiper(".linksSwiper", {
+    slidesPerView: 'auto',
+    spaceBetween: 16,
+});
+
+const authModal = document.getElementById('authorizationModal');
+const tabEl = document.querySelectorAll('button[data-bs-toggle="tab"]');
+
+tabEl.forEach(el => {
+    el.addEventListener('shown.bs.tab', event => {
+        clearAuthModal();
+        const recipient = event.target.getAttribute('data-bs-whatever');
+        const modalTitle = authModal.querySelector('.modal-title');
+        modalTitle.textContent = recipient;
+    });
+});
+
+const btnReviews = document.querySelector('.reviews');
+const btnTitle = document.querySelector('.reviews span');
+const collapseEl = document.querySelectorAll('.multi-collapse');
+let taggle = true;
+
+if (btnReviews) {
+    btnReviews.addEventListener('click', function() {
+        if (taggle) {
+            collapseEl.forEach(el => {
+                bootstrap.Collapse.getOrCreateInstance(el).show();
+            })
+            taggle = false;
+            btnTitle.textContent = 'Закрыть обзоры';
+        }
+        else {
+            collapseEl.forEach(el => {
+                bootstrap.Collapse.getOrCreateInstance(el).hide();
+            })
+            taggle = true;
+            btnTitle.textContent = 'Раскрыть обзоры';
+        }
+    });
+}
+
+const pointTheme = document.querySelector('html');
+const THEME = {
+    DARK:  'dark',
+    LIGHT: 'light',
+    AUTO:  'auto',
+};
+
+setTheme = (mode) => {
+    switch (mode) {
+        case THEME.DARK: {
+            pointTheme.setAttribute('data-bs-theme', THEME.DARK);
+            return;
+        }
+        case THEME.LIGHT: {
+            pointTheme.setAttribute('data-bs-theme', THEME.LIGHT);
+            return;
+        }
+        case THEME.AUTO:
+        default: {
+            const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if(isDark) {
+                pointTheme.setAttribute('data-bs-theme', THEME.DARK);
+            } else {
+                pointTheme.setAttribute('data-bs-theme', THEME.LIGHT);
+            }
+            return;
+        }
+    }
+};
+
+initTheme = () => {
+    setTheme(THEME.AUTO);
+};
+
+initTheme();
+
+authModal.addEventListener('hide.bs.modal', event => {
+    clearAuthModal();
+})
+
+function clearAuthModal() {
+    $('#auth .alert').html('').addClass('d-none');
+    $('#auth input').val('').removeClass('is-invalid');
+    $('#reg .alert').html('').addClass('d-none');
+    $('#reg input').val('').removeClass('is-invalid');
+    $('#recovery .alert').html('').addClass('d-none');
+    $('#recovery input').val('').removeClass('is-invalid');
+    $('#recovery .first_form').removeClass('d-none');
+}
+
+function submit_cookies() {
+    var exdate = new Date();
+    exdate.setDate(exdate.getDate()+365);
+    document.cookie = "submit_cookies=1;expires=" + exdate.toGMTString() + ";path=/;domain=.garant.ru;";
+}

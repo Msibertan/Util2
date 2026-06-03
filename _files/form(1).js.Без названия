@@ -1,0 +1,262 @@
+if (typeof parseUrl === 'undefined') {
+    /**
+     * Parse Url
+     *
+     * @param {string} url
+     * @return {{source: string, protocol: string, host: string, port: string, query: string, params: Object, file: *, hash: string, path: string, relative: *, segments: Array}}
+     * @link https://habrahabr.ru/post/177559/#comment_6164291
+     */
+    function parseUrl(url) {
+        var a = document.createElement('a');
+        a.href = url;
+
+        return {
+            source: url,
+            protocol: a.protocol.replace(':', ''),
+            host: a.hostname,
+            port: a.port,
+            query: a.search,
+            params: (function () {
+                var ret = {},
+                    seg = a.search.replace(/^\?/, '').split('&'),
+                    len = seg.length, i = 0, s;
+                for (; i < len; i++) {
+                    if (!seg[i]) {
+                        continue;
+                    }
+                    s = seg[i].split('=');
+                    ret[s[0]] = decodeURIComponent(s[1]);
+                }
+                return ret;
+            })(),
+            file: (a.pathname.match(/\/([^\/?#]+)$/i) || [, ''])[1],
+            hash: a.hash.replace('#', ''),
+            path: a.pathname.replace(/^([^\/])/, '/$1'),
+            relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [, ''])[1],
+            segments: a.pathname.replace(/^\//, '').split('/')
+        };
+    }
+}
+
+function login() {
+    var url = parseUrl(window.location.href);
+    //$('#auth .alert').html('').addClass('d-none');
+    //$('#auth input').removeClass('is-invalid');
+    var error_text = '';
+    var ret_val = true;
+    var error = '';
+    var $pers_login = $('#auth #pers_login'),
+        $pers_password = $('#auth #pers_password'),
+        $pers_rem_me = $('#auth #pers_rem_me'),
+        clear = function () {
+            $('#auth .alert').html('').addClass('d-none');
+            $('#auth input').removeClass('is-invalid');
+        };
+
+    clear();
+    if ($pers_login.val() == '') {
+        error = 'Введите логин';
+        $('#auth .auth_error_login').html(error);
+        $pers_login.addClass('is-invalid');
+    }
+
+    if (error =='' && $pers_password.val() == '') {
+        error = 'Введите пароль';
+        $('#auth .auth_error_password').html(error);
+        $pers_password.addClass('is-invalid');
+    }
+
+    if (error == '' ) {
+        $('#auth .alert-success').html("Подождите, пожалуйста.").removeClass('d-none');
+        WebAjax(
+            '/ajax/login/',
+            {
+                'form_data[login]'	: $pers_login.val(),
+                'form_data[pass]'	: $pers_password.val(),
+                'form_data[rem_me]'	: $pers_rem_me.attr('checked') ? 1 : 0,
+                'form_data[from]': encodeURIComponent(url.params['from'] || ''),
+                'form_data[sign]': encodeURIComponent(url.params['sign'] || '')
+            },
+            function(type, msg) {
+                clear();
+                if (type === 'OK') {
+                    var loc = '/personal/';
+                    switch ($('#reg_type').val()) {
+                        case 'konkurs' : loc = "/konkurs/selection_tour/";  break;
+                        case 'forum'   : loc = "/forum/";                   break;
+                    }
+                    if (loc) {
+                        window.location = loc;
+                    }
+
+                } else {
+                    error = "Ошибка авторизации. Проверьте данные";
+                    $('#auth .alert-danger').html(error).removeClass('d-none');
+                }
+            }
+        );
+    }
+
+    return false;
+}
+
+function register() {
+    var err_msg = '',
+    clear = function () {
+        $('#reg .alert').html('').addClass('d-none');
+        $('#reg input').removeClass('is-invalid');
+    };
+
+    err_msg = CheckEmailField( 'reg #email', 'E-mail');
+    if (err_msg) {
+        $('#reg #email').addClass('is-invalid');
+        $('#reg #reg_error_email').html(err_msg);
+    }
+
+    if( err_msg ==  '' )
+    {
+        err_msg = CheckStrField( 'reg  #password', 'Пароль' );
+        var re_pass = /^[A-Za-z\d@$!%*_#?&]{6,12}$/;
+        var pass = jQuery.trim( $('#reg #password').val() );
+        if(err_msg ==  '' && !re_pass.test(pass) )
+        {
+            err_msg = 'Не корректный пароль';
+            $('#reg #password').focus().addClass('is-invalid');
+            $('#reg #reg_error_password').html(err_msg);
+        }
+    }
+
+    if( err_msg ==  '' )
+    {
+        err_msg = CheckStrField( 'reg  #password_repeat', 'Подтверждение пароля');
+        if (err_msg != '') {
+            $('#reg #password_repeat').focus().addClass('is-invalid');
+            $('#reg #reg_error_password_repeat').html(err_msg);
+        }
+    }
+
+    if(	$('#reg #password').val() != $('#reg #password_repeat').val()	)
+    {
+        err_msg = 'Пароль подтверждён не корректно';
+        $('#reg #password_repeat').focus().addClass('is-invalid');
+        $('#reg #reg_error_password_repeat').html(err_msg);
+    }
+
+    var $agreement = $('#reg #agreements');
+    if (err_msg == '' && $agreement.prop('checked') == false) {
+        err_msg = 'Необходимо принять соглашение';
+        $('#reg #agreements').addClass('is-invalid');
+        $('#reg #reg_error_agreements').html(err_msg);
+    }
+
+    if( err_msg == '' )
+    {
+        $('#reg .alert-success').html("Данные передаются на сервер. Подождите, пожалуйста.").removeClass('d-none');
+        WebAjax(
+            '/ajax/reg_user/',
+            {
+                'form_data[email]'				: $('#reg #email').val(),
+                'form_data[password]'			: $('#reg #password').val(),
+                'form_data[password_repeat]'	: $('#reg #password_repeat').val(),
+                'form_data[fio]'				: jQuery.trim( $('#reg #fio').val() ),
+                'form_data[agreement]'	        : $agreement.prop('checked') ? 'yes' : 'no'
+            },
+            function(type, msg)
+            {
+                clear();
+                if( type == 'OK' )
+                {
+                    window.location = "/personal/register/confirm/";
+                }
+                else
+                {
+                    $('#reg .alert-danger').html(msg).removeClass('d-none');
+                }
+            }
+        );
+    }
+
+    return false;
+
+}
+
+function logout() {
+    WebAjax(
+        '/ajax/logout/',
+        {
+            'form_data[logout]': true
+        },
+        function(type, msg) {
+            if( type == 'OK' ) {
+                window.location = "/";
+            }
+        }
+    );
+}
+
+function recovery() {
+    var err_msg = '',
+        clear = function () {
+            $('#recovery .alert').html('').addClass('d-none');
+            $('#recovery input').removeClass('is-invalid');
+        };
+
+    if( err_msg ==  '' )
+    {
+        err_msg = CheckStrField( 'recovery_email', 'E-mail');
+    }
+
+    if( err_msg == '' )
+    {
+        WebAjax(
+            '/ajax/forget_pass/',
+            {
+                'form_data[mail]' : $('#recovery_email').val()
+            },
+            function(type, msg)
+            {
+                clear();
+                if( type == 'OK' )
+                {
+                    $('#recovery .first_form').addClass('d-none');
+                    $('#recovery .alert-success').html($('.send_ok_msg').html()).removeClass('d-none');
+                    $('#recovery_email').val('');
+                }
+                else
+                {
+                    $('#recovery .alert-danger').html(msg).removeClass('d-none');
+                }
+            }
+        );
+    }
+    else {
+        $('#recovery_email').addClass('is-invalid');
+        $('#recovery .invalid-feedback').html(err_msg);
+    }
+}
+
+$(document).ready(function() {
+    var url = parseUrl(window.location.href);
+    if (('login' in url.params || 'konkurs_login' in url.params || $('#authorizationModal').data('display') == true) && $('#authorizationModal').length) {
+        let modal_login = new bootstrap.Modal('#authorizationModal');
+        modal_login.show();
+    }
+
+    $('#auth #login').click(function(e) {
+        e.preventDefault();
+        login();
+    });
+    $('.logout').click(function(e) {
+        e.preventDefault();
+        logout();
+    });
+    $('#reg #register').click(function(e) {
+        e.preventDefault();
+        register();
+    });
+    $('#recovery #forget').click(function(e) {
+        e.preventDefault();
+        recovery();
+    });
+
+});
